@@ -7,7 +7,7 @@ My code here is quite atrocious in some parts, but it works so i decided to rele
 These patches bump the java version requirement from java 6 + jfx to java 8 + jfx, the java version i use for development can be found [here](https://cdn.azul.com/zulu/bin/zulu8.60.0.21-ca-fx-jdk8.0.322-linux_x64.tar.gz)  
 
 # Usage  
-1. Download the installer and patches from the Actions tab in this repository (requires an account)
+1. Download the installer and patches from the Releases tab
 2. Put the patches file in the same directory as the official launcher jar, which can be found at https://launcher.mojang.com/v1/objects/eabbff5ff8e21250e33670924a0c5e38f47c840b/launcher.jar  
 3. Run the installer and select the official launcher jar  
 4. The patched jar will be in that same directory, but called "launcher-patched.jar"
