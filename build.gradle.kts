@@ -15,7 +15,7 @@ buildscript {
     dependencies {
         classpath("org.benf:cfr:0.152")
         classpath("codechicken:DiffPatch:1.2.5.19")
-        classpath("com.github.NepNep21:BinaryPatcher:f77712625c")
+        classpath("club.bottomservices.git.nep:BinaryPatcher:-SNAPSHOT")
     }
 }
 
