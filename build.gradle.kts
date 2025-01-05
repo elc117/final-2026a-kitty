@@ -9,13 +9,13 @@ import java.nio.file.Paths
 buildscript {
     repositories {
         maven("https://nexus.covers1624.net/repository/maven-releases/")
-        maven("https://jitpack.io/")
+        maven("https://anlhv7uq3mymeyxwru3fiprdpeyftvhcfakdsf4bag7qm4xq6tfhm6yd.onion.tor.observer/releases")
     }
 
     dependencies {
         classpath("org.benf:cfr:0.152")
         classpath("codechicken:DiffPatch:1.2.5.19")
-        classpath("club.bottomservices.git.nep:BinaryPatcher:-SNAPSHOT")
+        classpath("club.bottomservices:binarypatcher:1.1.3")
     }
 }
 
