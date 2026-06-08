@@ -1,11 +1,15 @@
 # README para aula:
 8/6:  
-Atualmente, a funcionalidade básica do interactive flow está funcionando. Ainda faltam alguns aspectos importantes para resolver:  
+Atualmente, a funcionalidade básica do interactive flow está funcionando (assim como o device flow, que já era parte do projeto). Ainda faltam alguns aspectos importantes para resolver:  
 Reduzir o uso de static, especialmente em MicrosoftAuth.java  
 Completar o processo de relocação em https://github.com/elc117/final-2026a-kitty/blob/2b6bf8f25eff0c0347baa47b98e5fae71480c2aa/build.gradle.kts#L213  
 
 Considerações para a correção:  
 A natureza desse projeto necessita que seja estruturado de uma maneira que pode parecer estranha, por exemplo a falta de lambdas. Lambdas não podem ser utilizadas pois o bytecode emitido deve ser compatível com Java 6, essa compatibilidade é necessária para reduzir o tamanho dos binary patches gerados.  
+Como as mudanças ao projeto sendo utilizadas como trabalho ainda estão em desenvolvimento, as instruções abaixo de Development devem ser utilizadas, ao invés de Usage. Especificamente:  
+1. Utilizar Java 8 + JavaFX
+2. Rodar a tarefa filterDecomp com Gradle
+3. Rodar a tarefa runLauncher com Gradle
 
 # README original:
 # MSA4Legacy
