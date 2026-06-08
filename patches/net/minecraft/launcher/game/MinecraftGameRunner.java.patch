@@ -56,7 +56,7 @@
 +        msa = profManager.getAuthDatabase().getMSAByUUID(profManager.getSelectedUser());
 +        if (msa != null) {
 +            try {
-+                msa = MicrosoftAuth.authenticate(msa.email, null).get();
++                msa = MicrosoftAuth.authenticate(msa.email, null, null).get();
 +            } catch (InterruptedException e) {
 +                Thread.currentThread().interrupt();
 +            } catch (ExecutionException e) {

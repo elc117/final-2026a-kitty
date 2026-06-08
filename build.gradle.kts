@@ -1,7 +1,6 @@
-// Rewrite this spaghetti eventually
-
 import codechicken.diffpatch.cli.DiffOperation
 import codechicken.diffpatch.cli.PatchOperation
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import net.minecraftforge.binarypatcher.Generator
 import org.benf.cfr.reader.api.CfrDriver
 import java.nio.file.Paths
@@ -21,13 +20,14 @@ buildscript {
 
 plugins {
     java
+    id("com.gradleup.shadow") version "8.3.+"
 }
 
 group = "me.nepnep.MSA4Legacy"
 version = "2.0.0"
 
 val origDecompName = "launcherDecompTmp"
-val buildDirectory: String = buildDir.canonicalPath
+val buildDirectory: String = layout.buildDirectory.asFile.get().canonicalPath
 val origDecompDir = buildDirectory + File.separator + origDecompName
 val launcherJar = "$buildDirectory/launcher.jar"
 
@@ -38,15 +38,21 @@ repositories {
 }
 
 val installer: Configuration by configurations.creating
-val shadow: Configuration by configurations.creating
+val include: Configuration by configurations.creating
 val decompConfig: Configuration by configurations.creating
+val relocationClasspath: Configuration by configurations.creating
 
 configurations {
-    implementation.get().extendsFrom(installer, shadow)
+    implementation.get().extendsFrom(installer, include)
 }
 
 dependencies {
-    shadow("com.microsoft.azure:msal4j:1.11.0")
+    include("com.microsoft.azure:msal4j:1.11.0")
+
+    // slf4j-impl must be included in the relocation classpath so that references to log4j from it are redirected, even though it isn't relocated itself.
+    relocationClasspath("org.apache.logging.log4j:log4j-slf4j-impl:2.25.3")
+    relocationClasspath("org.apache.logging.log4j:log4j-core:2.25.3")
+
     // Shadow installer
     installer("club.bottomservices:binarypatcher:1.1.3")
     decompConfig(files(launcherJar))
@@ -190,7 +196,7 @@ val recompileLauncher = tasks.register<JavaCompile>("recompileLauncher") {
     targetCompatibility = "1.6"
     
     source = decompSourceSet.java.sourceDirectories.asFileTree
-    classpath = files(launcherJar, shadow.files)
+    classpath = files(launcherJar, include.files)
     destinationDirectory.set(File("$buildDirectory/launcherRecomp"))
 }.get()
 
@@ -202,10 +208,27 @@ tasks.getByName<Jar>("jar") {
     from(installer.files.map { zipTree(it) })
 }
 
+// Up to date log4j is necessary to handle msal4j's slf4j calls, and relocation is necessary to avoid conflicts with the launcher's log4j.
+// Additionally, direct per-dependency relocation does not seem possible, so create a separate classpath to relocate it and then integrate it with the final jar.
+val relocationTask = tasks.register<ShadowJar>("relocateLibraries") {
+    group = taskGroup
+    archiveClassifier.set("relocations")
+
+    relocate("org.apache.logging.log4j", "me.nepnep.msa4legacy.relocated.org.apache.logging.log4j")
+
+    from(relocationClasspath.files.map { zipTree(it) })
+}.get()
+
 tasks.register<Jar>("jarLauncher") {
     group = taskGroup
-    dependsOn("recompileLauncher")
-    from(recompileLauncher.destinationDirectory, zipTree(launcherJar), shadow.files.map { zipTree(it) })
+    dependsOn("recompileLauncher", relocationTask)
+
+    from(
+        recompileLauncher.destinationDirectory,
+        zipTree(launcherJar),
+        include.files.map { zipTree(it) },
+        relocationTask.archiveFile.map { zipTree(it) }
+    )
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 

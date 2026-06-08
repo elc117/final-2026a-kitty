@@ -15,12 +15,14 @@ import java.util.HashSet;
 import java.util.function.Consumer;
 
 public class MSALogInForm extends JPanel {
+    private static final boolean deviceFlow = Boolean.parseBoolean(System.getProperty("msa4legacy.deviceFlow", "false"));
     private final AccountConsumer consumer = new AccountConsumer();
     private final Logger logger = LogManager.getLogger();
     public final LogInPopup popup;
+    private final InteractiveAuth interactive = deviceFlow ? null : new InteractiveAuth();
     
     public MSALogInForm(LogInPopup popup) {
-        super(new GridLayout(5, 1, 0, 10)); // Extra one for device code
+        super(new GridLayout(deviceFlow ? 5 : 4, 1, 0, 10)); // Extra one for device codes
         this.popup = popup;
         
         JLabel label = new JLabel("Email");
@@ -36,7 +38,7 @@ public class MSALogInForm extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (emailField.getDocument() != null) {
-                    MicrosoftAuth.authenticate(emailField.getText(), MSALogInForm.this).thenAccept(consumer);
+                    MicrosoftAuth.authenticate(emailField.getText(), MSALogInForm.this, interactive).thenAccept(consumer);
                 }
             }
         });

@@ -121,7 +121,7 @@
 -            this.popup.getMinecraftLauncher().getLauncher().getVersionManager().getExecutorService().execute(new Runnable(){
 -
 +            final String selectedString = (String) selected;
-+            MicrosoftAuth.authenticate(selectedString, popup.msaLogInForm).thenAccept(new Consumer<MicrosoftAccount>() {
++            MicrosoftAuth.authenticate(selectedString, popup.msaLogInForm, null).thenAccept(new Consumer<MicrosoftAccount>() {
                  @Override
 -                public void run() {
 -                    if (auth != null && uuid != null) {

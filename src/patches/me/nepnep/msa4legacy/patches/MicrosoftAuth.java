@@ -22,12 +22,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -43,14 +47,19 @@ public class MicrosoftAuth {
     private static final TokenMapper tokenMapper = new TokenMapper();
 
     static {
-        app = PublicClientApplication.builder("810b4a0d-7663-4e28-8680-24458240dee4")
-                .setTokenCacheAccessAspect(new TokenCache())
-                .build();
+        try {
+            app = PublicClientApplication.builder("810b4a0d-7663-4e28-8680-24458240dee4")
+                    .setTokenCacheAccessAspect(new TokenCache())
+                    .authority("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorization")
+                    .build();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
         scopes.add("XboxLive.signin");
     }
 
-    public static CompletableFuture<MicrosoftAccount> authenticate(final String email, final MSALogInForm form) {
-        return acquireToken(email, form).thenApply(new Function<String, MicrosoftAccount>() {
+    public static CompletableFuture<MicrosoftAccount> authenticate(final String email, final MSALogInForm form, InteractiveAuth interactive) {
+        return acquireToken(email, form, interactive).thenApply(new Function<String, MicrosoftAccount>() {
             @Override
             public MicrosoftAccount apply(String oauthToken) {
                 if (oauthToken == null) {
@@ -89,7 +98,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all") // Stupid but it works
-    private static CompletableFuture<String> acquireToken(String email, MSALogInForm form) {
+    private static CompletableFuture<String> acquireToken(String email, MSALogInForm form, InteractiveAuth interactive) {
         try {
             for (IAccount account : app.getAccounts().get()) {
                 if (account.username().equals(email)) {
@@ -98,15 +107,38 @@ public class MicrosoftAuth {
                 }
             }
         } catch (ExecutionException e) {
-            logger.debug("Couldn't load account from cache, starting device flow", e);
-            return deviceFlow(form);
+            logger.debug("Couldn't load account from cache, starting authenticating", e);
+            return interactive == null ? deviceFlow(form) : interactiveFlow(interactive);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error("Failed to get cached accounts", e);
         }
 
-        return deviceFlow(form);
+        return interactive == null ? deviceFlow(form) : interactiveFlow(interactive);
+    }
+
+    private static CompletableFuture<String> interactiveFlow(final InteractiveAuth interactive) {
+        try {
+            InteractiveRequestParameters params = InteractiveRequestParameters.builder(new URI("http://localhost"))
+                    .scopes(scopes)
+                    .tenant(tenant)
+                    .systemBrowserOptions(SystemBrowserOptions.builder().openBrowserAction(interactive).build())
+                    .build();
+
+            return app.acquireToken(params).whenComplete(new BiConsumer<IAuthenticationResult, Throwable>() {
+                @Override
+                public void accept(IAuthenticationResult result, Throwable throwable) {
+                    if (throwable != null) {
+                        return;
+                    }
+
+                    interactive.hide();
+                }
+            }).thenApply(tokenMapper);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static JsonObject xblAuth(String oauthToken) throws IOException {
@@ -225,7 +257,7 @@ public class MicrosoftAuth {
             @Override
             public void accept(DeviceCode deviceCode) {
                 for (Component comp : form.getComponents()) {
-                    if (comp instanceof JTextPane && ((JTextPane) comp).getText().contains("/link")) { // Only one with this is the code
+                    if (comp instanceof JTextPane && ((JTextPane) comp).getText().contains("/link")) { // The only one with this is the code
                         form.remove(comp);
                         break;
                     }
