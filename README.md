@@ -1,3 +1,13 @@
+# README para aula:
+8/6:  
+Atualmente, a funcionalidade básica do interactive flow está funcionando. Ainda faltam alguns aspectos importantes para resolver:  
+Reduzir o uso de static, especialmente em MicrosoftAuth.java  
+Completar o processo de relocação em https://github.com/elc117/final-2026a-kitty/blob/2b6bf8f25eff0c0347baa47b98e5fae71480c2aa/build.gradle.kts#L213  
+
+Considerações para a correção:  
+A natureza desse projeto necessita que seja estruturado de uma maneira que pode parecer estranha, por exemplo a falta de lambdas. Lambdas não podem ser utilizadas pois o bytecode emitido deve ser compatível com Java 6, essa compatibilidade é necessária para reduzir o tamanho dos binary patches gerados.  
+
+# README original:
 # MSA4Legacy
 Patches for the old minecraft official launcher to add microsoft account support  
 My code here is quite atrocious in some parts, but it works so i decided to release it now, i will likely be improving it in the future  
