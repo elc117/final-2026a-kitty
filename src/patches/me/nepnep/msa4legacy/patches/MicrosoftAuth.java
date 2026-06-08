@@ -107,7 +107,7 @@ public class MicrosoftAuth {
                 }
             }
         } catch (ExecutionException e) {
-            logger.debug("Couldn't load account from cache, starting authenticating", e);
+            logger.debug("Couldn't load account from cache, authenticating", e);
             return interactive == null ? deviceFlow(form) : interactiveFlow(interactive);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
