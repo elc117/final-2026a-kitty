@@ -1,7 +1,7 @@
 # README para aula:
 8/6:  
 Atualmente, a funcionalidade básica do interactive flow está funcionando (assim como o device flow, que já era parte do projeto). Ainda faltam alguns aspectos importantes para resolver:  
-Reduzir o uso de static, especialmente em MicrosoftAuth.java  
+~~Reduzir o uso de static, especialmente em MicrosoftAuth.java~~  
 Completar o processo de relocação em https://github.com/elc117/final-2026a-kitty/blob/2b6bf8f25eff0c0347baa47b98e5fae71480c2aa/build.gradle.kts#L213  
 
 Considerações para a correção:  
