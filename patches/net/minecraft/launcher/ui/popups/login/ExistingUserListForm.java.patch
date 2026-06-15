@@ -32,7 +32,7 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
-@@ -33,13 +40,20 @@
+@@ -33,14 +40,23 @@
  implements ActionListener {
      private static final Logger LOGGER = LogManager.getLogger();
      private final LogInPopup popup;
@@ -43,8 +43,10 @@
      private final JButton logOutButton = new JButton("Log Out");
 +    private final GridBagConstraints defaultConstraints = new GridBagConstraints();
      private final ProfileManager profileManager;
++    private final MicrosoftAuth msa;
  
-     public ExistingUserListForm(LogInPopup popup) {
+-    public ExistingUserListForm(LogInPopup popup) {
++    public ExistingUserListForm(LogInPopup popup, MicrosoftAuth msa) {
 +        defaultConstraints.fill = 2;
 +        defaultConstraints.gridx = 0;
 +        defaultConstraints.gridy = -1;
@@ -52,9 +54,11 @@
 +        defaultConstraints.weightx = 1.0;
 +        
          this.popup = popup;
++        this.msa = msa;
          this.profileManager = popup.getMinecraftLauncher().getProfileManager();
          this.authDatabase = popup.getMinecraftLauncher().getProfileManager().getAuthDatabase();
-@@ -57,19 +71,33 @@
+         this.fillUsers();
+@@ -57,19 +73,33 @@
          }
      }
  
@@ -98,7 +102,7 @@
          this.add(Box.createVerticalStrut(5), constraints);
          JLabel usernameLabel = new JLabel("Existing User:");
          Font labelFont = usernameLabel.getFont().deriveFont(1);
-@@ -94,43 +122,57 @@
+@@ -94,43 +124,57 @@
          this.add((Component)new JPopupMenu.Separator(), constraints);
      }
  
@@ -121,7 +125,7 @@
 -            this.popup.getMinecraftLauncher().getLauncher().getVersionManager().getExecutorService().execute(new Runnable(){
 -
 +            final String selectedString = (String) selected;
-+            MicrosoftAuth.authenticate(selectedString, popup.msaLogInForm, null).thenAccept(new Consumer<MicrosoftAccount>() {
++            this.msa.authenticate(selectedString, popup.msaLogInForm, null).thenAccept(new Consumer<MicrosoftAccount>() {
                  @Override
 -                public void run() {
 -                    if (auth != null && uuid != null) {
@@ -184,12 +188,12 @@
          }
      }
  
-@@ -146,6 +188,25 @@
+@@ -146,6 +190,25 @@
          } else {
              this.userDropdown.removeItem(name);
              this.authDatabase.removeUUID(uuid);
 +            authDatabase.msaByEmail.remove(name);
-+            final PublicClientApplication pca = MicrosoftAuth.app;
++            final PublicClientApplication pca = this.msa.app;
 +            pca.getAccounts().thenAccept(new Consumer<Set<IAccount>>() {
 +                @Override
 +                public void accept(Set<IAccount> iAccounts) {
@@ -210,7 +214,7 @@
              try {
                  this.profileManager.saveProfiles();
              }
-@@ -158,4 +219,3 @@
+@@ -158,4 +221,3 @@
          }
      }
  }

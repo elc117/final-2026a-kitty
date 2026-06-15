@@ -17,12 +17,40 @@
  import net.minecraft.launcher.LauncherConstants;
  import net.minecraft.launcher.MinecraftUserInterface;
  import net.minecraft.launcher.SwingUserInterface;
-@@ -227,9 +230,15 @@
+@@ -71,6 +74,7 @@
+     private final ProfileManager profileManager;
+     private final Gson gson = new Gson();
+     private final GameLaunchDispatcher launchDispatcher;
++    private final MicrosoftAuth msAuth;
+     private boolean winTenHack = false;
+     private UUID clientToken = UUID.randomUUID();
+     private String requestedUser;
+@@ -105,8 +109,9 @@
+         LOGGER.info("System.getProperty('java.vendor') == '" + System.getProperty("java.vendor") + "'");
+         LOGGER.info("System.getProperty('sun.arch.data.model') == '" + System.getProperty("sun.arch.data.model") + "'");
+         LOGGER.info("proxy == " + proxy);
+-        this.launchDispatcher = new GameLaunchDispatcher(this, this.processArgs(args));
+         this.launcher = new com.mojang.launcher.Launcher(this.userInterface, workingDirectory, proxy, proxyAuth, new MinecraftVersionManager(new LocalVersionList(workingDirectory), new RemoteVersionList(LauncherConstants.PROPERTIES.getVersionManifest(), proxy)), Agent.MINECRAFT, MinecraftReleaseTypeFactory.instance(), 21);
++        this.msAuth = new MicrosoftAuth();
++        this.launchDispatcher = new GameLaunchDispatcher(this, this.processArgs(args), this.msAuth);
+         this.profileManager = new ProfileManager(this);
+         ((SwingUserInterface)this.userInterface).initializeFrame();
+         this.refreshVersionsAndProfiles();
+@@ -211,7 +216,7 @@
+     }
+ 
+     private MinecraftUserInterface selectUserInterface(JFrame frame) {
+-        return new SwingUserInterface(this, frame);
++        return new SwingUserInterface(this, frame, msAuth);
+     }
+ 
+     public com.mojang.launcher.Launcher getLauncher() {
+@@ -227,9 +232,15 @@
      }
  
      public void ensureLoggedIn() {
 -        UserAuthentication auth = this.profileManager.getAuthDatabase().getByUUID(this.profileManager.getSelectedUser());
-+        MicrosoftAuth.addAllToDatabase(null);
++        this.msAuth.addAllToDatabase(null);
 +        AuthenticationDatabase authDb = profileManager.getAuthDatabase();
 +        String selected = profileManager.getSelectedUser();
 +        UserAuthentication auth = authDb.getByUUID(selected);
@@ -35,7 +63,7 @@
          } else if (!auth.isLoggedIn()) {
              if (auth.canLogIn()) {
                  try {
-@@ -240,7 +249,6 @@
+@@ -240,7 +251,6 @@
                      catch (IOException e) {
                          LOGGER.error("Couldn't save profiles after refreshing auth!", (Throwable)e);
                      }
@@ -43,7 +71,7 @@
                  }
                  catch (AuthenticationException e) {
                      LOGGER.error("Exception whilst logging into profile", (Throwable)e);
-@@ -259,7 +267,6 @@
+@@ -259,7 +269,6 @@
                  catch (IOException e) {
                      LOGGER.error("Couldn't save profiles after refreshing auth!", (Throwable)e);
                  }
@@ -51,7 +79,7 @@
              }
              catch (InvalidCredentialsException e) {
                  LOGGER.error("Exception whilst logging into profile", (Throwable)e);
-@@ -269,6 +276,7 @@
+@@ -269,6 +278,7 @@
                  LOGGER.error("Exception whilst logging into profile", (Throwable)e);
              }
          }
@@ -59,7 +87,7 @@
      }
  
      public UUID getClientToken() {
-@@ -297,10 +305,12 @@
+@@ -297,10 +307,12 @@
                  referencedObjects.add(object.getHash().toLowerCase());
              }
          }
@@ -74,7 +102,7 @@
                  if (files == null) continue;
                  for (File file : files) {
                      if (referencedObjects.contains(file.getName().toLowerCase())) continue;
-@@ -373,7 +383,8 @@
+@@ -373,7 +385,8 @@
          if (!virtualsDir.isDirectory()) {
              return;
          }
@@ -84,7 +112,7 @@
          if (directories != null) {
              for (File directory : directories) {
                  File lastUsedFile = new File(directory, ".lastused");
-@@ -398,10 +409,12 @@
+@@ -398,10 +411,12 @@
          if (!root.isDirectory()) {
              return;
          }
@@ -99,7 +127,7 @@
                  if (files == null) continue;
                  for (File folder : files) {
                      LOGGER.debug("Deleting " + folder);
-@@ -488,7 +501,6 @@
+@@ -488,7 +503,6 @@
                  if (!FileUtils.deleteQuietly(file)) break block0;
                  LOGGER.info("Deleted empty directory {}", file);
              }
@@ -107,7 +135,7 @@
          }
      }
  
-@@ -521,4 +533,3 @@
+@@ -521,4 +535,3 @@
          LOGGER = LogManager.getLogger();
      }
  }

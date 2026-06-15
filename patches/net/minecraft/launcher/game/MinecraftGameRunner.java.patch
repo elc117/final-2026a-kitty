@@ -21,15 +21,26 @@
  import net.minecraft.launcher.updater.ArgumentType;
  import net.minecraft.launcher.updater.CompleteMinecraftVersion;
  import net.minecraft.launcher.updater.Library;
-@@ -77,6 +79,7 @@
+@@ -73,14 +75,17 @@
+     private final Launcher minecraftLauncher;
+     private final String[] additionalLaunchArgs;
+     private final GameProcessFactory processFactory = new DirectGameProcessFactory();
++    private final MicrosoftAuth msAuth;
+     private File nativeDir;
      private LauncherVisibilityRule visibilityRule = LauncherVisibilityRule.CLOSE_LAUNCHER;
      private UserAuthentication auth;
      private Profile selectedProfile;
 +    public MicrosoftAccount msa = null;
  
-     public MinecraftGameRunner(Launcher minecraftLauncher, String[] additionalLaunchArgs) {
+-    public MinecraftGameRunner(Launcher minecraftLauncher, String[] additionalLaunchArgs) {
++    public MinecraftGameRunner(Launcher minecraftLauncher, String[] additionalLaunchArgs, MicrosoftAuth msAuth) {
          this.minecraftLauncher = minecraftLauncher;
-@@ -183,10 +186,10 @@
+         this.additionalLaunchArgs = additionalLaunchArgs;
++        this.msAuth = msAuth;
+     }
+ 
+     /*
+@@ -183,10 +188,10 @@
          }
          CompatibilityRule.FeatureMatcher featureMatcher = this.createFeatureMatcher();
          StrSubstitutor argumentsSubstitutor = this.createArgumentsSubstitutor(this.getVersion(), this.selectedProfile, gameDirectory, assetsDir, this.auth);
@@ -42,7 +53,7 @@
          Proxy proxy = this.getLauncher().getProxy();
          PasswordAuthentication proxyAuth = this.getLauncher().getProxyAuth();
          if (!proxy.equals(Proxy.NO_PROXY)) {
-@@ -254,25 +257,56 @@
+@@ -254,25 +259,56 @@
          }
          return virtualRoot;
      }
@@ -56,7 +67,7 @@
 +        msa = profManager.getAuthDatabase().getMSAByUUID(profManager.getSelectedUser());
 +        if (msa != null) {
 +            try {
-+                msa = MicrosoftAuth.authenticate(msa.email, null, null).get();
++                msa = this.msAuth.authenticate(msa.email, null, null).get();
 +            } catch (InterruptedException e) {
 +                Thread.currentThread().interrupt();
 +            } catch (ExecutionException e) {
@@ -107,7 +118,7 @@
          } else {
              map.put("auth_player_name", "Player");
              map.put("auth_uuid", new UUID(0L, 0L).toString());
-@@ -281,6 +315,7 @@
+@@ -281,6 +317,7 @@
          map.put("profile_name", selectedProfile.getName());
          map.put("version_name", version.getId());
          map.put("game_directory", gameDirectory.getAbsolutePath());
@@ -115,7 +126,7 @@
          map.put("game_assets", assetsDirectory.getAbsolutePath());
          map.put("assets_root", this.getAssetsDir().getAbsolutePath());
          map.put("assets_index_name", this.getVersion().getAssetIndex().getId());
-@@ -390,7 +425,8 @@
+@@ -390,7 +427,8 @@
      }
  
      private CompatibilityRule.FeatureMatcher createFeatureMatcher() {
@@ -125,7 +136,7 @@
      }
  
      private String constructClassPath(CompleteMinecraftVersion version) {
-@@ -469,7 +505,7 @@
+@@ -469,7 +507,7 @@
                      }
                      catch (Throwable throwable) {
                          Downloadable.closeSilently(inputStream);
@@ -134,7 +145,7 @@
                      }
                      Downloadable.closeSilently(inputStream);
                      break block10;
-@@ -494,4 +530,3 @@
+@@ -494,4 +532,3 @@
          return this.selectedProfile;
      }
  }
