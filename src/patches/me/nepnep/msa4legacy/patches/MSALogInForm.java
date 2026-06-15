@@ -20,10 +20,12 @@ public class MSALogInForm extends JPanel {
     private final Logger logger = LogManager.getLogger();
     public final LogInPopup popup;
     private final InteractiveAuth interactive = deviceFlow ? null : new InteractiveAuth();
+    private final MicrosoftAuth msa;
     
-    public MSALogInForm(LogInPopup popup) {
+    public MSALogInForm(LogInPopup popup, final MicrosoftAuth msa) {
         super(new GridLayout(deviceFlow ? 5 : 4, 1, 0, 10)); // Extra one for device codes
         this.popup = popup;
+        this.msa = msa;
         
         JLabel label = new JLabel("Email");
         add(label);
@@ -38,7 +40,7 @@ public class MSALogInForm extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (emailField.getDocument() != null) {
-                    MicrosoftAuth.authenticate(emailField.getText(), MSALogInForm.this, interactive).thenAccept(consumer);
+                    msa.authenticate(emailField.getText(), MSALogInForm.this, interactive).thenAccept(consumer);
                 }
             }
         });
@@ -64,14 +66,14 @@ public class MSALogInForm extends JPanel {
         @Override
         public void accept(MicrosoftAccount microsoftAccount) {
             popup.setLoggedIn(microsoftAccount);
-            File cacheFile = MicrosoftAuth.cacheInfoFile;
+            File cacheFile = msa.cacheInfoFile;
             try {
                 if (!cacheFile.exists()) {
                     cacheFile.createNewFile();
                 }
-                HashSet<MicrosoftAccount> cached = MicrosoftAuth.gson.fromJson(FileUtils.readFileToString(cacheFile, "UTF-8"), MicrosoftAuth.accountSetType);
+                HashSet<MicrosoftAccount> cached = msa.gson.fromJson(FileUtils.readFileToString(cacheFile, "UTF-8"), msa.accountSetType);
                 cached.add(microsoftAccount);
-                String raw = MicrosoftAuth.gson.toJson(cached);
+                String raw = msa.gson.toJson(cached);
                 FileUtils.write(cacheFile, raw, "UTF-8");
             } catch (IOException e) {
                 logger.error("IOException while adding account to info cache", e);

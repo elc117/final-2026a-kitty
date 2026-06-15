@@ -36,17 +36,17 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class MicrosoftAuth {
-    public static final PublicClientApplication app;
-    public static final Gson gson = new Gson();
+    public final PublicClientApplication app;
+    public final Gson gson = new Gson();
     @SuppressWarnings("all") // Beta
-    public static final Type accountSetType = new TypeToken<HashSet<MicrosoftAccount>>() {}.getType();
-    public static final File cacheInfoFile = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
-    private static final Set<String> scopes = new HashSet<String>();
-    private static final String tenant = "consumers";
-    private static final Logger logger = LogManager.getLogger();
-    private static final TokenMapper tokenMapper = new TokenMapper();
+    public final Type accountSetType = new TypeToken<HashSet<MicrosoftAccount>>() {}.getType();
+    public final File cacheInfoFile = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
+    private final Set<String> scopes = new HashSet<String>();
+    private final String tenant = "consumers";
+    private final Logger logger = LogManager.getLogger();
+    private final TokenMapper tokenMapper = new TokenMapper();
 
-    static {
+    public MicrosoftAuth() {
         try {
             app = PublicClientApplication.builder("810b4a0d-7663-4e28-8680-24458240dee4")
                     .setTokenCacheAccessAspect(new TokenCache())
@@ -58,7 +58,7 @@ public class MicrosoftAuth {
         scopes.add("XboxLive.signin");
     }
 
-    public static CompletableFuture<MicrosoftAccount> authenticate(final String email, final MSALogInForm form, InteractiveAuth interactive) {
+    public CompletableFuture<MicrosoftAccount> authenticate(final String email, final MSALogInForm form, InteractiveAuth interactive) {
         return acquireToken(email, form, interactive).thenApply(new Function<String, MicrosoftAccount>() {
             @Override
             public MicrosoftAccount apply(String oauthToken) {
@@ -90,7 +90,7 @@ public class MicrosoftAuth {
         });
     }
     
-    private static void addAccount(String email, MicrosoftAccount msa, MSALogInForm form) {
+    private void addAccount(String email, MicrosoftAccount msa, MSALogInForm form) {
         Launcher.getCurrentInstance().getProfileManager().getAuthDatabase().msaByEmail.put(email, msa);
         if (form != null) {
             addToDatabase(email, form);
@@ -98,7 +98,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all") // Stupid but it works
-    private static CompletableFuture<String> acquireToken(String email, MSALogInForm form, InteractiveAuth interactive) {
+    private CompletableFuture<String> acquireToken(String email, MSALogInForm form, InteractiveAuth interactive) {
         try {
             for (IAccount account : app.getAccounts().get()) {
                 if (account.username().equals(email)) {
@@ -118,7 +118,7 @@ public class MicrosoftAuth {
         return interactive == null ? deviceFlow(form) : interactiveFlow(interactive);
     }
 
-    private static CompletableFuture<String> interactiveFlow(final InteractiveAuth interactive) {
+    private CompletableFuture<String> interactiveFlow(final InteractiveAuth interactive) {
         try {
             InteractiveRequestParameters params = InteractiveRequestParameters.builder(new URI("http://localhost"))
                     .scopes(scopes)
@@ -141,7 +141,7 @@ public class MicrosoftAuth {
         }
     }
 
-    private static JsonObject xblAuth(String oauthToken) throws IOException {
+    private JsonObject xblAuth(String oauthToken) throws IOException {
         HttpsURLConnection conn = (HttpsURLConnection) new URL("https://user.auth.xboxlive.com/user/authenticate").openConnection();
         conn.setRequestMethod("POST");
 
@@ -172,7 +172,7 @@ public class MicrosoftAuth {
         }
     }
 
-    private static String xstsAuth(String xblToken) throws IOException {
+    private String xstsAuth(String xblToken) throws IOException {
         HttpsURLConnection conn = (HttpsURLConnection) new URL("https://xsts.auth.xboxlive.com/xsts/authorize").openConnection();
         conn.setRequestMethod("POST");
 
@@ -210,7 +210,7 @@ public class MicrosoftAuth {
         }
     }
 
-    private static String minecraftAuth(String xstsToken, String userHash) throws IOException {
+    private String minecraftAuth(String xstsToken, String userHash) throws IOException {
         HttpsURLConnection conn = (HttpsURLConnection) new URL("https://api.minecraftservices.com/authentication/login_with_xbox").openConnection();
         conn.setRequestMethod("POST");
 
@@ -233,7 +233,7 @@ public class MicrosoftAuth {
         }
     }
 
-    private static MicrosoftAccount getProfile(String mcToken, String email) throws IOException {
+    private MicrosoftAccount getProfile(String mcToken, String email) throws IOException {
         HttpsURLConnection conn = (HttpsURLConnection) new URL("https://api.minecraftservices.com/minecraft/profile").openConnection();
         conn.setRequestProperty("Authorization", "Bearer " + mcToken);
         conn.connect();
@@ -252,7 +252,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all")
-    private static CompletableFuture<String> deviceFlow(final MSALogInForm form) {
+    private CompletableFuture<String> deviceFlow(final MSALogInForm form) {
         DeviceCodeFlowParameters param = DeviceCodeFlowParameters.builder(scopes, new Consumer<DeviceCode>() {
             @Override
             public void accept(DeviceCode deviceCode) {
@@ -319,7 +319,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all")
-    public static void addAllToDatabase(MSALogInForm form) {
+    public void addAllToDatabase(MSALogInForm form) {
         try {
             if (!cacheInfoFile.exists()) {
                 cacheInfoFile.createNewFile();
