@@ -6,6 +6,11 @@ Referências: N/A
 Resultado:  
 <img width="800" height="483" alt="video-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/372a8721-9947-49f7-84a5-9dbaae6e20d5" />
 
+A adição do método de autenticação e si foi relativamente simples, mas revelou alguns problemas:
+1. O uso de static em MicrosoftAuth deixava o código chato de ler.
+2. A biblioteca utilizada para autenticação, msal4j, utiliza slf4j para logging. Achei melhor utilizar log4j como o backend para slf4j, mas ocorreu que versões modernas de log4j são incompatíveis com a versão antiga usada pelo programa original.  
+2.1. Para resolver isso, utilizei o método Jar In Jar e o carregamento dinâmico de log4j.  
+2.2. Infelizmente, foi necessário utilizar reflection para configurar a versão dinâmica. Uma alternativa seria criar um classpath separado para efetuar a configuração e depois combinar esse classpath com a principal durante a compilação, mas achei que isso seria mais complicado.
 
 8/6:  
 Atualmente, a funcionalidade básica do interactive flow está funcionando (assim como o device flow, que já era parte do projeto). Ainda faltam alguns aspectos importantes para resolver:  
