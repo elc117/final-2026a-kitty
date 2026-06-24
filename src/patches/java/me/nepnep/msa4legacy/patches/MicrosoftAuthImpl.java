@@ -3,6 +3,10 @@ package me.nepnep.msa4legacy.patches;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import com.microsoft.aad.msal4j.*;
+import me.nepnep.msa4legacy.HasLoginPopup;
+import me.nepnep.msa4legacy.InteractiveAuth;
+import me.nepnep.msa4legacy.MicrosoftAccount;
+import me.nepnep.msa4legacy.MicrosoftAuth;
 import net.minecraft.launcher.Launcher;
 import net.minecraft.launcher.ui.popups.login.ExistingUserListForm;
 import net.minecraft.launcher.ui.popups.login.LogInPopup;
@@ -35,18 +39,19 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class MicrosoftAuth {
-    public final PublicClientApplication app;
-    public final Gson gson = new Gson();
+public class MicrosoftAuthImpl implements MicrosoftAuth {
+    private final PublicClientApplication app;
     @SuppressWarnings("all") // Beta
-    public final Type accountSetType = new TypeToken<HashSet<MicrosoftAccount>>() {}.getType();
-    public final File cacheInfoFile = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
+    private final Type accountSetType = new TypeToken<HashSet<MicrosoftAccount>>() {}.getType();
+    private final File cacheInfoFile = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
+
+    private final Gson gson = new Gson();
     private final Set<String> scopes = new HashSet<String>();
     private final String tenant = "consumers";
     private final Logger logger = LogManager.getLogger();
     private final TokenMapper tokenMapper = new TokenMapper();
 
-    public MicrosoftAuth() {
+    public MicrosoftAuthImpl() {
         try {
             app = PublicClientApplication.builder("810b4a0d-7663-4e28-8680-24458240dee4")
                     .setTokenCacheAccessAspect(new TokenCache())
@@ -58,7 +63,8 @@ public class MicrosoftAuth {
         scopes.add("XboxLive.signin");
     }
 
-    public CompletableFuture<MicrosoftAccount> authenticate(final String email, final MSALogInForm form, InteractiveAuth interactive) {
+    @Override
+    public CompletableFuture<MicrosoftAccount> authenticate(final String email, final HasLoginPopup form, InteractiveAuth interactive) {
         return acquireToken(email, form, interactive).thenApply(new Function<String, MicrosoftAccount>() {
             @Override
             public MicrosoftAccount apply(String oauthToken) {
@@ -90,7 +96,7 @@ public class MicrosoftAuth {
         });
     }
     
-    private void addAccount(String email, MicrosoftAccount msa, MSALogInForm form) {
+    private void addAccount(String email, MicrosoftAccount msa, HasLoginPopup form) {
         Launcher.getCurrentInstance().getProfileManager().getAuthDatabase().msaByEmail.put(email, msa);
         if (form != null) {
             addToDatabase(email, form);
@@ -98,7 +104,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all") // Stupid but it works
-    private CompletableFuture<String> acquireToken(String email, MSALogInForm form, InteractiveAuth interactive) {
+    private CompletableFuture<String> acquireToken(String email, HasLoginPopup form, InteractiveAuth interactive) {
         try {
             for (IAccount account : app.getAccounts().get()) {
                 if (account.username().equals(email)) {
@@ -252,7 +258,7 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all")
-    private CompletableFuture<String> deviceFlow(final MSALogInForm form) {
+    private CompletableFuture<String> deviceFlow(final HasLoginPopup form) {
         DeviceCodeFlowParameters param = DeviceCodeFlowParameters.builder(scopes, new Consumer<DeviceCode>() {
             @Override
             public void accept(DeviceCode deviceCode) {
@@ -319,7 +325,8 @@ public class MicrosoftAuth {
     }
 
     @SuppressWarnings("all")
-    public void addAllToDatabase(MSALogInForm form) {
+    @Override
+    public void addAllToDatabase(HasLoginPopup form) {
         try {
             if (!cacheInfoFile.exists()) {
                 cacheInfoFile.createNewFile();
@@ -365,8 +372,44 @@ public class MicrosoftAuth {
         }
     }
 
-    private static void addToDatabase(final String email, MSALogInForm form) {
-        LogInPopup popup = form.popup;
+    @Override
+    public File getCacheFile() {
+        return this.cacheInfoFile;
+    }
+
+    @Override
+    public Gson getGson() {
+        return this.gson;
+    }
+
+    @Override
+    public Type getAccountSetType() {
+        return this.accountSetType;
+    }
+
+    @Override
+    public void removeAccount(final String name) {
+        this.app.getAccounts().thenAccept(new Consumer<Set<IAccount>>() {
+            @Override
+            public void accept(Set<IAccount> iAccounts) {
+                for (IAccount acc : iAccounts) {
+                    if (acc.username().equals(name)) {
+                        try {
+                            MicrosoftAuthImpl.this.app.removeAccount(acc).get();
+                        } catch (ExecutionException e) {
+                            logger.error("Exception removing microsoft account", e);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    private static void addToDatabase(final String email, HasLoginPopup form) {
+        LogInPopup popup = form.getLoginPopup();
         ExistingUserListForm userListForm = popup.getExistingUserListForm();
         JComboBox box = userListForm.userDropdown;
         List<String> items = new ArrayList<String>();

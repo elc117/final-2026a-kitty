@@ -5,7 +5,7 @@
  import javax.swing.JPanel;
  import javax.swing.SwingUtilities;
 +
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
++import me.nepnep.msa4legacy.MicrosoftAccount;
  import net.minecraft.launcher.Launcher;
  import net.minecraft.launcher.profile.Profile;
  import net.minecraft.launcher.profile.ProfileManager;

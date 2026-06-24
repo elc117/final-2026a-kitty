@@ -5,9 +5,9 @@
  import javax.swing.SwingUtilities;
  import javax.swing.border.EmptyBorder;
 +
++import me.nepnep.msa4legacy.MicrosoftAuth;
 +import me.nepnep.msa4legacy.patches.MSALogInForm;
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
-+import me.nepnep.msa4legacy.patches.MicrosoftAuth;
++import me.nepnep.msa4legacy.MicrosoftAccount;
  import net.minecraft.launcher.Launcher;
  import net.minecraft.launcher.LauncherConstants;
 -import net.minecraft.launcher.ui.popups.login.AuthErrorForm;

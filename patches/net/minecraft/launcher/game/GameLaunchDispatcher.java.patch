@@ -1,16 +1,18 @@
 --- a/net/minecraft/launcher/game/GameLaunchDispatcher.java
 +++ b/net/minecraft/launcher/game/GameLaunchDispatcher.java
-@@ -13,6 +13,9 @@
+@@ -13,8 +13,10 @@
  import com.mojang.launcher.updater.VersionSyncInfo;
  import java.io.File;
  import java.util.concurrent.locks.ReentrantLock;
 +
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
-+import me.nepnep.msa4legacy.patches.MicrosoftAuth;
++import me.nepnep.msa4legacy.MicrosoftAccount;
++import me.nepnep.msa4legacy.MicrosoftAuth;
  import net.minecraft.launcher.Launcher;
- import net.minecraft.launcher.game.MinecraftGameRunner;
+-import net.minecraft.launcher.game.MinecraftGameRunner;
  import net.minecraft.launcher.profile.Profile;
-@@ -24,11 +27,13 @@
+ import net.minecraft.launcher.profile.ProfileManager;
+ 
+@@ -24,11 +26,13 @@
      private final String[] additionalLaunchArgs;
      private final ReentrantLock lock = new ReentrantLock();
      private final BiMap<UserAuthentication, MinecraftGameRunner> instances = HashBiMap.create();
@@ -25,7 +27,7 @@
      }
  
      /*
-@@ -38,8 +43,10 @@
+@@ -38,8 +42,10 @@
          UserAuthentication user;
          ProfileManager profileManager = this.launcher.getProfileManager();
          Profile profile = profileManager.getProfiles().isEmpty() ? null : profileManager.getSelectedProfile();
@@ -38,7 +40,7 @@
              return PlayStatus.LOADING;
          }
          this.lock.lock();
-@@ -56,10 +63,10 @@
+@@ -56,10 +62,10 @@
          finally {
              this.lock.unlock();
          }
@@ -51,7 +53,7 @@
              return PlayStatus.CAN_PLAY_ONLINE;
          }
          return PlayStatus.CAN_PLAY_OFFLINE;
-@@ -93,7 +100,7 @@
+@@ -93,7 +99,7 @@
          final Profile profile = profileManager.getSelectedProfile();
          UserAuthentication user = profileManager.getSelectedUser() == null ? null : profileManager.getAuthDatabase().getByUUID(profileManager.getSelectedUser());
          final String lastVersionId = profile.getLastVersionId();
@@ -60,7 +62,7 @@
          gameRunner.setStatus(GameInstanceStatus.PREPARING);
          this.lock.lock();
          try {
-@@ -194,4 +201,3 @@
+@@ -194,4 +200,3 @@
          }
      }
  }

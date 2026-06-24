@@ -1,4 +1,4 @@
-package me.nepnep.msa4legacy.patches;
+package me.nepnep.msa4legacy;
 
 import java.util.Objects;
 

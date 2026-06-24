@@ -1,0 +1,180 @@
+--- a/net/minecraft/launcher/Main.java
++++ b/net/minecraft/launcher/Main.java
+@@ -5,25 +5,156 @@
+ 
+ import com.mojang.launcher.OperatingSystem;
+ import java.awt.Dimension;
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.InputStream;
++import java.io.*;
++import java.lang.reflect.Field;
++import java.lang.reflect.InvocationTargetException;
+ import java.net.InetSocketAddress;
+ import java.net.Proxy;
+-import java.util.List;
++import java.net.URL;
++import java.net.URLClassLoader;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.*;
++import java.util.jar.JarEntry;
++import java.util.jar.JarFile;
+ import javax.imageio.ImageIO;
+ import javax.swing.JFrame;
+ import joptsimple.ArgumentAcceptingOptionSpec;
+ import joptsimple.NonOptionArgumentSpec;
+ import joptsimple.OptionParser;
+ import joptsimple.OptionSet;
+-import net.minecraft.launcher.Launcher;
+-import net.minecraft.launcher.LauncherConstants;
++import me.nepnep.msa4legacy.ExcludingClassLoader;
++import org.apache.commons.io.IOUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public class Main {
+-    private static final Logger LOGGER = LogManager.getLogger();
++    private static final ExcludingClassLoader CL;
++    // Static in order to ensure it runs before MSAL4J classes are loaded.
++    static {
++        // This uses reflection to manually configure the relocated log4j version,
++        // as its config format has incompatibilities with the launcher's and it cannot be accessed normally.
++        try {
++            // Prevent the relocated log4j version from using the incompatible config file by loading it in a separate classloader after Jar-in-Jar bundling.
++            URLClassLoader ctxClassLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
++            List<URL> ctxUrls = new ArrayList<URL>(Arrays.asList(ctxClassLoader.getURLs()));
++
++            InputStream in = ctxClassLoader.getResourceAsStream("MSA4Legacy-static-relocations.jar");
++            try {
++                ctxUrls.add(extractJarInJar(in));
++            } catch (IOException e) {
++                throw new RuntimeException(e);
++                // Java 6 does not support try-with-resources.
++            } finally {
++                IOUtils.closeQuietly(in);
++            }
++
++            ExcludingClassLoader wrapper = new ExcludingClassLoader(ctxUrls.toArray(new URL[0]), new String[]{"log4j2.xml"});
++            Thread.currentThread().setContextClassLoader(wrapper);
++
++            Field systemClassLoader = ClassLoader.class.getDeclaredField("scl");
++            systemClassLoader.setAccessible(true);
++            systemClassLoader.set(null, wrapper);
++
++            System.setProperty("log4j2.statusLoggerLevel", "DEBUG");
++
++            Class<?> builderFactory =
++                    wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory");
++            Object builderInstance = builderFactory.getMethod("newConfigurationBuilder").invoke(null);
++            Class<?> builderClass = builderInstance.getClass();
++            Class<?> levelClass = wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.Level");
++            Object rootLogger = builderClass.getMethod("newRootLogger", levelClass)
++                    .invoke(builderInstance, levelClass.getField("WARN").get(null));
++            Class<?> loggerInterface = rootLogger.getClass().getInterfaces()[0];
++
++            builderInstance = builderClass.getMethod("add", loggerInterface).invoke(builderInstance, rootLogger);
++            Object config = builderClass.getMethod("build", boolean.class).invoke(builderInstance, false);
++            Class<?> configInterface = config.getClass().getSuperclass().getInterfaces()[0];
++            Class<?> appenderClass = wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.appender.ConsoleAppender");
++
++            Object patternBuilder = wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.layout.PatternLayout")
++                    .getMethod("newBuilder")
++                    .invoke(null);
++            Class<?> patternBuilderClass = patternBuilder.getClass();
++            patternBuilderClass.getMethod("withPattern", String.class)
++                    .invoke(patternBuilder, "[%d{HH:mm:ss} %level]: %msg%n");
++            Object pattern = patternBuilderClass.getMethod("build").invoke(patternBuilder);
++
++            Object appenderBuilder = appenderClass.getMethod("newBuilder").invoke(null);
++            Class<?> appenderBuilderClass = appenderBuilder.getClass();
++            appenderBuilderClass.getMethod("setName", String.class)
++                    .invoke(appenderBuilder, "stdout appender");
++            Class<?> layoutInterface = pattern.getClass().getSuperclass().getSuperclass().getInterfaces()[0];
++            appenderBuilderClass.getMethod("setLayout", layoutInterface).invoke(appenderBuilder, pattern);
++
++            Object appender = appenderBuilder.getClass().getMethod("build").invoke(appenderBuilder);
++
++            Class<?> appenderInterface = appenderClass.getSuperclass().getSuperclass().getInterfaces()[0];
++            configInterface.getMethod("addAppender", appenderInterface).invoke(config, appender);
++
++            Class<?> loggerContextClass = wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.LoggerContext");
++            Object loggerContext = loggerContextClass.getMethod("getContext").invoke(null);
++            loggerContextClass.getMethod("reconfigure", configInterface).invoke(loggerContext, config);
++            CL = wrapper;
++            // Single catch statements with multiple exceptions are not allowed when targeting Java 6.
++        } catch (ClassNotFoundException e) {
++            throw new RuntimeException(e);
++        } catch (NoSuchFieldException e) {
++            throw new RuntimeException(e);
++        } catch (InvocationTargetException e) {
++            throw new RuntimeException(e);
++        } catch (IllegalAccessException e) {
++            throw new RuntimeException(e);
++        } catch (NoSuchMethodException e) {
++            throw new RuntimeException(e);
++        }
++
++        LOGGER = LogManager.getLogger();
++    }
++
++    private static URL extractJarInJar(InputStream in) throws IOException {
++        Path extracted = Files.createTempFile("MSA4Legacy-relocations-", ".jar");
++        OutputStream out = Files.newOutputStream(extracted);
++        try {
++            IOUtils.copy(in, out);
++        } finally {
++            IOUtils.closeQuietly(out);
++        }
++
++        return extractJarContents(extracted.toFile());
++    }
++
++    // findResource() appears to misbehave with a package input within jar files, for an unknown reason.
++    private static URL extractJarContents(File jar) throws IOException {
++        JarFile file = new JarFile(jar);
++        try {
++            File tmpDir = Files.createTempDirectory("MSA4Legacy-relocations-extracted").toFile();
++            Enumeration<JarEntry> entries = file.entries();
++            while (entries.hasMoreElements()) {
++                JarEntry entry = entries.nextElement();
++                File out = new File(tmpDir, entry.getName());
++                if (entry.isDirectory()) {
++                    out.mkdirs();
++                    continue;
++                }
++
++                out.getParentFile().mkdirs();
++                InputStream data = file.getInputStream(entry);
++                FileOutputStream outStream = new FileOutputStream(out);
++                try {
++                    IOUtils.copy(data, outStream);
++                } finally {
++                    IOUtils.closeQuietly(data);
++                    IOUtils.closeQuietly(outStream);
++                }
++            }
++            return tmpDir.toURI().toURL();
++        } finally {
++            IOUtils.closeQuietly(file);
++        }
++    }
++
++    private static final Logger LOGGER;
+ 
+     public static void main(String[] args) {
+         LOGGER.debug("main() called!");
+@@ -74,7 +205,7 @@
+             System.setProperty("os.version", "10.0");
+         }
+         LOGGER.debug("Starting up launcher.");
+-        Launcher launcher = new Launcher(frame, workingDirectory, finalProxy, null, leftoverArgs.toArray(new String[leftoverArgs.size()]), 100);
++        Launcher launcher = new Launcher(frame, workingDirectory, finalProxy, null, leftoverArgs.toArray(new String[leftoverArgs.size()]), 100, CL);
+         if (optionSet.has("winTen")) {
+             launcher.setWinTenHack();
+         }
+@@ -107,4 +238,3 @@
+         return workingDirectory;
+     }
+ }
+-

@@ -9,7 +9,7 @@
 -import com.google.gson.stream.JsonWriter;
 -import java.io.IOException;
 -import java.util.HashMap;
-+import me.nepnep.msa4legacy.patches.LowerCaseEnumTypeAdapter;
++import me.nepnep.msa4legacy.LowerCaseEnumTypeAdapter;
 +
  import java.util.Locale;
  
