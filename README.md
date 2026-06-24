@@ -4,7 +4,8 @@ Curso: Sistemas de Informação
 Proposta: Permitir o uso de https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow para autenticação, assim como corrigir a compatibilidade com log4j.  
 Referências: N/A  
 Resultado:  
-TODO
+<img width="800" height="483" alt="video-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/372a8721-9947-49f7-84a5-9dbaae6e20d5" />
+
 
 8/6:  
 Atualmente, a funcionalidade básica do interactive flow está funcionando (assim como o device flow, que já era parte do projeto). Ainda faltam alguns aspectos importantes para resolver:  
