@@ -1,8 +1,15 @@
 # README para aula:
+Nome: Sofia Etchepare Daronco  
+Curso: Sistemas de Informação  
+Proposta: Permitir o uso de https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow para autenticação, assim como corrigir a compatibilidade com log4j.  
+Referências: N/A  
+Resultado:  
+TODO
+
 8/6:  
 Atualmente, a funcionalidade básica do interactive flow está funcionando (assim como o device flow, que já era parte do projeto). Ainda faltam alguns aspectos importantes para resolver:  
 ~~Reduzir o uso de static, especialmente em MicrosoftAuth.java~~  
-Completar o processo de relocação em https://github.com/elc117/final-2026a-kitty/blob/2b6bf8f25eff0c0347baa47b98e5fae71480c2aa/build.gradle.kts#L213  
+~~Completar o processo de relocação em~~ https://github.com/elc117/final-2026a-kitty/blob/2b6bf8f25eff0c0347baa47b98e5fae71480c2aa/build.gradle.kts#L213  
 
 Considerações para a correção:  
 A natureza desse projeto necessita que seja estruturado de uma maneira que pode parecer estranha, por exemplo a falta de lambdas. Lambdas não podem ser utilizadas pois o bytecode emitido deve ser compatível com Java 6, essa compatibilidade é necessária para reduzir o tamanho dos binary patches gerados.  
