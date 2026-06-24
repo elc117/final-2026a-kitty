@@ -1,6 +1,6 @@
 --- a/net/minecraft/launcher/Main.java
 +++ b/net/minecraft/launcher/Main.java
-@@ -5,25 +5,176 @@
+@@ -5,25 +5,174 @@
  
  import com.mojang.launcher.OperatingSystem;
  import java.awt.Dimension;
@@ -36,7 +36,6 @@
  
  public class Main {
 -    private static final Logger LOGGER = LogManager.getLogger();
-+    private static final ExcludingClassLoader CL;
 +    // Static in order to ensure it runs before MSAL4J classes are loaded.
 +    static {
 +        // This uses reflection to manually configure the relocated log4j version,
@@ -100,7 +99,6 @@
 +            Class<?> loggerContextClass = wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.LoggerContext");
 +            Object loggerContext = loggerContextClass.getMethod("getContext").invoke(null);
 +            loggerContextClass.getMethod("reconfigure", configInterface).invoke(loggerContext, config);
-+            CL = wrapper;
 +            // Single catch statements with multiple exceptions are not allowed when targeting Java 6.
 +        } catch (ClassNotFoundException e) {
 +            throw new RuntimeException(e);
@@ -184,16 +182,7 @@
  
      public static void main(String[] args) {
          LOGGER.debug("main() called!");
-@@ -74,7 +225,7 @@
-             System.setProperty("os.version", "10.0");
-         }
-         LOGGER.debug("Starting up launcher.");
--        Launcher launcher = new Launcher(frame, workingDirectory, finalProxy, null, leftoverArgs.toArray(new String[leftoverArgs.size()]), 100);
-+        Launcher launcher = new Launcher(frame, workingDirectory, finalProxy, null, leftoverArgs.toArray(new String[leftoverArgs.size()]), 100, CL);
-         if (optionSet.has("winTen")) {
-             launcher.setWinTenHack();
-         }
-@@ -107,4 +258,3 @@
+@@ -107,4 +256,3 @@
          return workingDirectory;
      }
  }
