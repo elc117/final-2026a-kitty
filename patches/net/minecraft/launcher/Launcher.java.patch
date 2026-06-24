@@ -28,24 +28,12 @@
      private boolean winTenHack = false;
      private UUID clientToken = UUID.randomUUID();
      private String requestedUser;
-@@ -79,15 +80,25 @@
-         return INSTANCE;
-     }
- 
--    public Launcher(JFrame frame, File workingDirectory, Proxy proxy, PasswordAuthentication proxyAuth, String[] args) {
--        this(frame, workingDirectory, proxy, proxyAuth, args, 0);
-+    public Launcher(JFrame frame, File workingDirectory, Proxy proxy, PasswordAuthentication proxyAuth, String[] args, ClassLoader cl) {
-+        this(frame, workingDirectory, proxy, proxyAuth, args, 0, cl);
-     }
- 
--    public Launcher(JFrame frame, File workingDirectory, Proxy proxy, PasswordAuthentication proxyAuth, String[] args, Integer bootstrapVersion) {
-+    public Launcher(JFrame frame, File workingDirectory, Proxy proxy, PasswordAuthentication proxyAuth, String[] args, Integer bootstrapVersion, ClassLoader cl) {
+@@ -87,6 +88,16 @@
          INSTANCE = this;
          this.setupErrorHandling();
          this.bootstrapVersion = bootstrapVersion;
--        this.userInterface = this.selectUserInterface(frame);
 +        try {
-+            Class<?> authClass = cl.loadClass("me.nepnep.msa4legacy.patches.MicrosoftAuthImpl");
++            Class<?> authClass = ClassLoader.getSystemClassLoader().loadClass("me.nepnep.msa4legacy.patches.MicrosoftAuthImpl");
 +            this.msAuth = (MicrosoftAuth) authClass.newInstance();
 +        } catch (InstantiationException e) {
 +            throw new RuntimeException(e);
@@ -54,10 +42,9 @@
 +        } catch (ClassNotFoundException e) {
 +            throw new RuntimeException(e);
 +        }
-+        this.userInterface = this.selectUserInterface(frame, cl);
+         this.userInterface = this.selectUserInterface(frame);
          if (bootstrapVersion < 4) {
              this.userInterface.showOutdatedNotice();
-             System.exit(0);
 @@ -105,8 +116,8 @@
          LOGGER.info("System.getProperty('java.vendor') == '" + System.getProperty("java.vendor") + "'");
          LOGGER.info("System.getProperty('sun.arch.data.model') == '" + System.getProperty("sun.arch.data.model") + "'");
@@ -68,14 +55,12 @@
          this.profileManager = new ProfileManager(this);
          ((SwingUserInterface)this.userInterface).initializeFrame();
          this.refreshVersionsAndProfiles();
-@@ -210,8 +221,8 @@
-         });
+@@ -211,7 +222,7 @@
      }
  
--    private MinecraftUserInterface selectUserInterface(JFrame frame) {
+     private MinecraftUserInterface selectUserInterface(JFrame frame) {
 -        return new SwingUserInterface(this, frame);
-+    private MinecraftUserInterface selectUserInterface(JFrame frame, ClassLoader cl) {
-+        return new SwingUserInterface(this, frame, msAuth, cl);
++        return new SwingUserInterface(this, frame, msAuth);
      }
  
      public com.mojang.launcher.Launcher getLauncher() {

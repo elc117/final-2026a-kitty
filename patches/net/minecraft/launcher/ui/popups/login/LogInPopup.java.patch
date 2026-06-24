@@ -33,7 +33,7 @@
 +    public final JPanel buttonPanel = new JPanel();
  
 -    public LogInPopup(Launcher minecraftLauncher, Callback callback) {
-+    public LogInPopup(Launcher minecraftLauncher, Callback callback, MicrosoftAuth msa, ClassLoader cl) {
++    public LogInPopup(Launcher minecraftLauncher, Callback callback, MicrosoftAuth msa) {
          super(true);
          this.minecraftLauncher = minecraftLauncher;
          this.callback = callback;
@@ -41,7 +41,7 @@
 -        this.existingUserListForm = new ExistingUserListForm(this);
 +        this.existingUserListForm = new ExistingUserListForm(this, msa);
 +        try {
-+            this.msaLogInForm = (HasLoginPopup) cl.loadClass("me.nepnep.msa4legacy.patches.MSALogInForm")
++            this.msaLogInForm = (HasLoginPopup) ClassLoader.getSystemClassLoader().loadClass("me.nepnep.msa4legacy.patches.MSALogInForm")
 +                    .getConstructor(this.getClass(), MicrosoftAuth.class)
 +                    .newInstance(this, msa);
 +        } catch (InstantiationException e) {
