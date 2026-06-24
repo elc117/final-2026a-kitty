@@ -11,13 +11,14 @@ import java.io.*;
 
 public class TokenCache implements ITokenCacheAccessAspect {
     private final Logger logger = LogManager.getLogger();
-    private final File file = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_accounts.json");
-    private String data = readFile();
+    private String data = null;
 
     @Override
     public void beforeCacheAccess(ITokenCacheAccessContext iTokenCacheAccessContext) {
-        if (data != null) {
-            iTokenCacheAccessContext.tokenCache().deserialize(data);
+        if (this.data == null) {
+            this.data = this.readFile();
+        } else {
+            iTokenCacheAccessContext.tokenCache().deserialize(this.data);
         }
     }
 
@@ -26,7 +27,7 @@ public class TokenCache implements ITokenCacheAccessAspect {
         data = iTokenCacheAccessContext.tokenCache().serialize();
         FileWriter writer = null;
         try {
-            writer = new FileWriter(file);
+            writer = new FileWriter(this.getFile());
             writer.write(data);
         } catch (IOException e) {
             logger.error("IOException while saving token cache", e);
@@ -38,7 +39,7 @@ public class TokenCache implements ITokenCacheAccessAspect {
     private String readFile() {
         FileInputStream stream = null;
         try {
-            stream = new FileInputStream(file);
+            stream = new FileInputStream(this.getFile());
             return IOUtils.toString(stream);
         } catch (FileNotFoundException e) {
             logger.error("microsoft_accounts.json not found, ignoring", e);
@@ -49,5 +50,9 @@ public class TokenCache implements ITokenCacheAccessAspect {
         } finally {
             IOUtils.closeQuietly(stream);
         }
+    }
+
+    private File getFile() {
+        return new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_accounts.json");
     }
 }

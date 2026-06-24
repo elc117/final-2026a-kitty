@@ -1,6 +1,7 @@
 package me.nepnep.msa4legacy;
 
 import com.google.gson.Gson;
+import me.nepnep.msa4legacy.patches.InteractiveAuth;
 
 import java.io.File;
 import java.lang.reflect.Type;

@@ -28,7 +28,7 @@
      private boolean winTenHack = false;
      private UUID clientToken = UUID.randomUUID();
      private String requestedUser;
-@@ -79,11 +80,11 @@
+@@ -79,15 +80,25 @@
          return INSTANCE;
      }
  
@@ -43,12 +43,7 @@
          INSTANCE = this;
          this.setupErrorHandling();
          this.bootstrapVersion = bootstrapVersion;
-@@ -105,8 +106,18 @@
-         LOGGER.info("System.getProperty('java.vendor') == '" + System.getProperty("java.vendor") + "'");
-         LOGGER.info("System.getProperty('sun.arch.data.model') == '" + System.getProperty("sun.arch.data.model") + "'");
-         LOGGER.info("proxy == " + proxy);
--        this.launchDispatcher = new GameLaunchDispatcher(this, this.processArgs(args));
-         this.launcher = new com.mojang.launcher.Launcher(this.userInterface, workingDirectory, proxy, proxyAuth, new MinecraftVersionManager(new LocalVersionList(workingDirectory), new RemoteVersionList(LauncherConstants.PROPERTIES.getVersionManifest(), proxy)), Agent.MINECRAFT, MinecraftReleaseTypeFactory.instance(), 21);
+-        this.userInterface = this.selectUserInterface(frame);
 +        try {
 +            Class<?> authClass = cl.loadClass("me.nepnep.msa4legacy.patches.MicrosoftAuthImpl");
 +            this.msAuth = (MicrosoftAuth) authClass.newInstance();
@@ -59,16 +54,28 @@
 +        } catch (ClassNotFoundException e) {
 +            throw new RuntimeException(e);
 +        }
++        this.userInterface = this.selectUserInterface(frame, cl);
+         if (bootstrapVersion < 4) {
+             this.userInterface.showOutdatedNotice();
+             System.exit(0);
+@@ -105,8 +116,8 @@
+         LOGGER.info("System.getProperty('java.vendor') == '" + System.getProperty("java.vendor") + "'");
+         LOGGER.info("System.getProperty('sun.arch.data.model') == '" + System.getProperty("sun.arch.data.model") + "'");
+         LOGGER.info("proxy == " + proxy);
+-        this.launchDispatcher = new GameLaunchDispatcher(this, this.processArgs(args));
+         this.launcher = new com.mojang.launcher.Launcher(this.userInterface, workingDirectory, proxy, proxyAuth, new MinecraftVersionManager(new LocalVersionList(workingDirectory), new RemoteVersionList(LauncherConstants.PROPERTIES.getVersionManifest(), proxy)), Agent.MINECRAFT, MinecraftReleaseTypeFactory.instance(), 21);
 +        this.launchDispatcher = new GameLaunchDispatcher(this, this.processArgs(args), this.msAuth);
          this.profileManager = new ProfileManager(this);
          ((SwingUserInterface)this.userInterface).initializeFrame();
          this.refreshVersionsAndProfiles();
-@@ -211,7 +222,7 @@
+@@ -210,8 +221,8 @@
+         });
      }
  
-     private MinecraftUserInterface selectUserInterface(JFrame frame) {
+-    private MinecraftUserInterface selectUserInterface(JFrame frame) {
 -        return new SwingUserInterface(this, frame);
-+        return new SwingUserInterface(this, frame, msAuth);
++    private MinecraftUserInterface selectUserInterface(JFrame frame, ClassLoader cl) {
++        return new SwingUserInterface(this, frame, msAuth, cl);
      }
  
      public com.mojang.launcher.Launcher getLauncher() {

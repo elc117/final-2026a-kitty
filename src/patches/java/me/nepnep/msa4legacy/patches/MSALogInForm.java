@@ -1,7 +1,6 @@
 package me.nepnep.msa4legacy.patches;
 
 import me.nepnep.msa4legacy.HasLoginPopup;
-import me.nepnep.msa4legacy.InteractiveAuth;
 import me.nepnep.msa4legacy.MicrosoftAccount;
 import me.nepnep.msa4legacy.MicrosoftAuth;
 import net.minecraft.launcher.ui.popups.login.LogInPopup;
