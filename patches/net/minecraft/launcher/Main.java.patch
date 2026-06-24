@@ -1,6 +1,6 @@
 --- a/net/minecraft/launcher/Main.java
 +++ b/net/minecraft/launcher/Main.java
-@@ -5,25 +5,154 @@
+@@ -5,25 +5,176 @@
  
  import com.mojang.launcher.OperatingSystem;
  import java.awt.Dimension;
@@ -18,6 +18,7 @@
 +import java.nio.file.Files;
 +import java.nio.file.Path;
 +import java.util.*;
++import java.util.function.Consumer;
 +import java.util.jar.JarEntry;
 +import java.util.jar.JarFile;
  import javax.imageio.ImageIO;
@@ -118,6 +119,8 @@
 +
 +    private static URL extractJarInJar(InputStream in) throws IOException {
 +        Path extracted = Files.createTempFile("MSA4Legacy-relocations-", ".jar");
++        File ret = extracted.toFile();
++        ret.deleteOnExit();
 +        OutputStream out = Files.newOutputStream(extracted);
 +        try {
 +            IOUtils.copy(in, out);
@@ -125,14 +128,33 @@
 +            IOUtils.closeQuietly(out);
 +        }
 +
-+        return extractJarContents(extracted.toFile());
++        return extractJarContents(ret);
 +    }
 +
 +    // findResource() appears to misbehave with a package input within jar files, for an unknown reason.
 +    private static URL extractJarContents(File jar) throws IOException {
 +        JarFile file = new JarFile(jar);
 +        try {
-+            File tmpDir = Files.createTempDirectory("MSA4Legacy-relocations-extracted").toFile();
++            final File tmpDir = Files.createTempDirectory("MSA4Legacy-relocations-extracted").toFile();
++
++            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
++                @Override
++                public void run() {
++                    try {
++                        Files.walk(tmpDir.toPath())
++                                .sorted(Collections.<Path>reverseOrder())
++                                .forEach(new Consumer<Path>() {
++                                    @Override
++                                    public void accept(Path file) {
++                                        file.toFile().delete();
++                                    }
++                                });
++                    } catch (IOException e) {
++                        // Ignore in shutdown hook.
++                    }
++                }
++            }));
++
 +            Enumeration<JarEntry> entries = file.entries();
 +            while (entries.hasMoreElements()) {
 +                JarEntry entry = entries.nextElement();
@@ -162,7 +184,7 @@
  
      public static void main(String[] args) {
          LOGGER.debug("main() called!");
-@@ -74,7 +203,7 @@
+@@ -74,7 +225,7 @@
              System.setProperty("os.version", "10.0");
          }
          LOGGER.debug("Starting up launcher.");
@@ -171,7 +193,7 @@
          if (optionSet.has("winTen")) {
              launcher.setWinTenHack();
          }
-@@ -107,4 +236,3 @@
+@@ -107,4 +258,3 @@
          return workingDirectory;
      }
  }
