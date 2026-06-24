@@ -1,4 +1,4 @@
-package me.nepnep.msa4legacy;
+package me.nepnep.msa4legacy.patches;
 
 import com.microsoft.aad.msal4j.OpenBrowserAction;
 import javafx.application.Platform;

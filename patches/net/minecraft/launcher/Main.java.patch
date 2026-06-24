@@ -1,6 +1,6 @@
 --- a/net/minecraft/launcher/Main.java
 +++ b/net/minecraft/launcher/Main.java
-@@ -5,25 +5,156 @@
+@@ -5,25 +5,154 @@
  
  import com.mojang.launcher.OperatingSystem;
  import java.awt.Dimension;
@@ -61,8 +61,6 @@
 +            Field systemClassLoader = ClassLoader.class.getDeclaredField("scl");
 +            systemClassLoader.setAccessible(true);
 +            systemClassLoader.set(null, wrapper);
-+
-+            System.setProperty("log4j2.statusLoggerLevel", "DEBUG");
 +
 +            Class<?> builderFactory =
 +                    wrapper.loadClass("me.nepnep.msa4legacy.relocated.org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory");
@@ -164,7 +162,7 @@
  
      public static void main(String[] args) {
          LOGGER.debug("main() called!");
-@@ -74,7 +205,7 @@
+@@ -74,7 +203,7 @@
              System.setProperty("os.version", "10.0");
          }
          LOGGER.debug("Starting up launcher.");
@@ -173,7 +171,7 @@
          if (optionSet.has("winTen")) {
              launcher.setWinTenHack();
          }
-@@ -107,4 +238,3 @@
+@@ -107,4 +236,3 @@
          return workingDirectory;
      }
  }

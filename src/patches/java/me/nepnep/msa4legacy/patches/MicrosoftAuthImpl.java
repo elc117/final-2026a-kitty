@@ -4,7 +4,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import com.microsoft.aad.msal4j.*;
 import me.nepnep.msa4legacy.HasLoginPopup;
-import me.nepnep.msa4legacy.InteractiveAuth;
 import me.nepnep.msa4legacy.MicrosoftAccount;
 import me.nepnep.msa4legacy.MicrosoftAuth;
 import net.minecraft.launcher.Launcher;
@@ -43,7 +42,6 @@ public class MicrosoftAuthImpl implements MicrosoftAuth {
     private final PublicClientApplication app;
     @SuppressWarnings("all") // Beta
     private final Type accountSetType = new TypeToken<HashSet<MicrosoftAccount>>() {}.getType();
-    private final File cacheInfoFile = new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
 
     private final Gson gson = new Gson();
     private final Set<String> scopes = new HashSet<String>();
@@ -328,6 +326,7 @@ public class MicrosoftAuthImpl implements MicrosoftAuth {
     @Override
     public void addAllToDatabase(HasLoginPopup form) {
         try {
+            File cacheInfoFile = this.getCacheFile();
             if (!cacheInfoFile.exists()) {
                 cacheInfoFile.createNewFile();
             }
@@ -374,7 +373,7 @@ public class MicrosoftAuthImpl implements MicrosoftAuth {
 
     @Override
     public File getCacheFile() {
-        return this.cacheInfoFile;
+        return new File(Launcher.getCurrentInstance().getLauncher().getWorkingDirectory(), "microsoft_account_info.json");
     }
 
     @Override
