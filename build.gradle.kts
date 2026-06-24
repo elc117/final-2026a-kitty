@@ -59,7 +59,7 @@ dependencies {
 }
 
 val decompSourceSet = sourceSets.create("decomp") {
-    java.srcDirs("src/decomp", "src/patches")
+    java.srcDirs("src/decomp", "src/patches/java")
     // This feels stupid :sob:
     val main = sourceSets.main.get()
     compileClasspath += main.compileClasspath + decompConfig.asFileTree
@@ -175,6 +175,7 @@ task("genSourceDiffs") {
 
 task("applyPatches") {
     group = taskGroup
+    dependsOn("filterDecomp")
 
     doLast {
         PatchOperation.builder()
@@ -212,11 +213,21 @@ tasks.getByName<Jar>("jar") {
 // Additionally, direct per-dependency relocation does not seem possible, so create a separate classpath to relocate it and then integrate it with the final jar.
 val relocationTask = tasks.register<ShadowJar>("relocateLibraries") {
     group = taskGroup
+    archiveVersion.set("static")
     archiveClassifier.set("relocations")
 
-    relocate("org.apache.logging.log4j", "me.nepnep.msa4legacy.relocated.org.apache.logging.log4j")
+    relocate("org.apache.logging", "me.nepnep.msa4legacy.relocated.org.apache.logging")
 
-    from(relocationClasspath.files.map { zipTree(it) })
+    from(
+        recompileLauncher.destinationDirectory.asFileTree.matching {
+            include("me/nepnep/msa4legacy/patches/**")
+        },
+        relocationClasspath.files.map { zipTree(it) },
+        include.files.map { zipTree(it) }
+    )
+
+    // Causes relocation issues.
+    exclude("META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat")
 }.get()
 
 tasks.register<Jar>("jarLauncher") {
@@ -224,10 +235,13 @@ tasks.register<Jar>("jarLauncher") {
     dependsOn("recompileLauncher", relocationTask)
 
     from(
-        recompileLauncher.destinationDirectory,
+        // Must be moved to the relocated jar in order to allow log4j access.
+        recompileLauncher.destinationDirectory.asFileTree.matching {
+            exclude("me/nepnep/msa4legacy/patches/**")
+        },
         zipTree(launcherJar),
-        include.files.map { zipTree(it) },
-        relocationTask.archiveFile.map { zipTree(it) }
+        relocationTask.archiveFile,
+        files("src/patches/resources")
     )
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

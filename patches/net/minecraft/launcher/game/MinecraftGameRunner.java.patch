@@ -12,8 +12,8 @@
 -import net.minecraft.launcher.Launcher;
 -import net.minecraft.launcher.LauncherConstants;
 +
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
-+import me.nepnep.msa4legacy.patches.MicrosoftAuth;
++import me.nepnep.msa4legacy.MicrosoftAccount;
++import me.nepnep.msa4legacy.MicrosoftAuth;
 +import net.minecraft.launcher.*;
  import net.minecraft.launcher.profile.LauncherVisibilityRule;
  import net.minecraft.launcher.profile.Profile;

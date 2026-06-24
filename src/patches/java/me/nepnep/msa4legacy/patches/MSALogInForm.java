@@ -1,5 +1,9 @@
 package me.nepnep.msa4legacy.patches;
 
+import me.nepnep.msa4legacy.HasLoginPopup;
+import me.nepnep.msa4legacy.InteractiveAuth;
+import me.nepnep.msa4legacy.MicrosoftAccount;
+import me.nepnep.msa4legacy.MicrosoftAuth;
 import net.minecraft.launcher.ui.popups.login.LogInPopup;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +18,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.function.Consumer;
 
-public class MSALogInForm extends JPanel {
+public class MSALogInForm extends HasLoginPopup {
     private static final boolean deviceFlow = Boolean.parseBoolean(System.getProperty("msa4legacy.deviceFlow", "false"));
     private final AccountConsumer consumer = new AccountConsumer();
     private final Logger logger = LogManager.getLogger();
@@ -61,19 +65,24 @@ public class MSALogInForm extends JPanel {
         }
         popup.getLogInForm().setVisible(!visible);
     }
-    
+
+    @Override
+    public LogInPopup getLoginPopup() {
+        return this.popup;
+    }
+
     private class AccountConsumer implements Consumer<MicrosoftAccount> {
         @Override
         public void accept(MicrosoftAccount microsoftAccount) {
             popup.setLoggedIn(microsoftAccount);
-            File cacheFile = msa.cacheInfoFile;
+            File cacheFile = msa.getCacheFile();
             try {
                 if (!cacheFile.exists()) {
                     cacheFile.createNewFile();
                 }
-                HashSet<MicrosoftAccount> cached = msa.gson.fromJson(FileUtils.readFileToString(cacheFile, "UTF-8"), msa.accountSetType);
+                HashSet<MicrosoftAccount> cached = msa.getGson().fromJson(FileUtils.readFileToString(cacheFile, "UTF-8"), msa.getAccountSetType());
                 cached.add(microsoftAccount);
-                String raw = msa.gson.toJson(cached);
+                String raw = msa.getGson().toJson(cached);
                 FileUtils.write(cacheFile, raw, "UTF-8");
             } catch (IOException e) {
                 logger.error("IOException while adding account to info cache", e);

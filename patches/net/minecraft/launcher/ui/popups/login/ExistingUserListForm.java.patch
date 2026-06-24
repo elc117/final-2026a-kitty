@@ -1,38 +1,27 @@
 --- a/net/minecraft/launcher/ui/popups/login/ExistingUserListForm.java
 +++ b/net/minecraft/launcher/ui/popups/login/ExistingUserListForm.java
-@@ -4,6 +4,8 @@
- package net.minecraft.launcher.ui.popups.login;
- 
- import com.google.common.base.Objects;
-+import com.microsoft.aad.msal4j.IAccount;
-+import com.microsoft.aad.msal4j.PublicClientApplication;
- import com.mojang.authlib.UserAuthentication;
- import com.mojang.authlib.exceptions.AuthenticationException;
- import com.mojang.util.UUIDTypeAdapter;
-@@ -15,6 +17,9 @@
+@@ -15,6 +15,7 @@
  import java.awt.event.ActionEvent;
  import java.awt.event.ActionListener;
  import java.io.IOException;
-+import java.util.Set;
-+import java.util.concurrent.ExecutionException;
 +import java.util.function.Consumer;
  import javax.swing.Box;
  import javax.swing.JButton;
  import javax.swing.JComboBox;
-@@ -22,9 +27,11 @@
+@@ -22,9 +23,11 @@
  import javax.swing.JPanel;
  import javax.swing.JPopupMenu;
  import javax.swing.SwingUtilities;
 +
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
-+import me.nepnep.msa4legacy.patches.MicrosoftAuth;
++import me.nepnep.msa4legacy.MicrosoftAccount;
++import me.nepnep.msa4legacy.MicrosoftAuth;
  import net.minecraft.launcher.profile.AuthenticationDatabase;
  import net.minecraft.launcher.profile.ProfileManager;
 -import net.minecraft.launcher.ui.popups.login.LogInPopup;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
-@@ -33,14 +40,23 @@
+@@ -33,14 +36,23 @@
  implements ActionListener {
      private static final Logger LOGGER = LogManager.getLogger();
      private final LogInPopup popup;
@@ -58,7 +47,7 @@
          this.profileManager = popup.getMinecraftLauncher().getProfileManager();
          this.authDatabase = popup.getMinecraftLauncher().getProfileManager().getAuthDatabase();
          this.fillUsers();
-@@ -57,19 +73,33 @@
+@@ -57,19 +69,33 @@
          }
      }
  
@@ -102,7 +91,7 @@
          this.add(Box.createVerticalStrut(5), constraints);
          JLabel usernameLabel = new JLabel("Existing User:");
          Font labelFont = usernameLabel.getFont().deriveFont(1);
-@@ -94,43 +124,57 @@
+@@ -94,43 +120,57 @@
          this.add((Component)new JPopupMenu.Separator(), constraints);
      }
  
@@ -188,33 +177,16 @@
          }
      }
  
-@@ -146,6 +190,25 @@
+@@ -146,6 +186,8 @@
          } else {
              this.userDropdown.removeItem(name);
              this.authDatabase.removeUUID(uuid);
 +            authDatabase.msaByEmail.remove(name);
-+            final PublicClientApplication pca = this.msa.app;
-+            pca.getAccounts().thenAccept(new Consumer<Set<IAccount>>() {
-+                @Override
-+                public void accept(Set<IAccount> iAccounts) {
-+                    for (IAccount acc : iAccounts) {
-+                        if (acc.username().equals(name)) {
-+                            try {
-+                                pca.removeAccount(acc).get();
-+                            } catch (ExecutionException e) {
-+                                LOGGER.error("Exception removing microsoft account", e);
-+                            } catch (InterruptedException e) {
-+                                Thread.currentThread().interrupt(); // Maybe?
-+                            }
-+                            break;
-+                        }
-+                    }
-+                }
-+            });
++            this.msa.removeAccount(name);
              try {
                  this.profileManager.saveProfiles();
              }
-@@ -158,4 +221,3 @@
+@@ -158,4 +200,3 @@
          }
      }
  }

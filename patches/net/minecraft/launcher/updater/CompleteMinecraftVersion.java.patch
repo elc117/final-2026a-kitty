@@ -10,28 +10,30 @@
  import com.mojang.authlib.UserAuthentication;
  import com.mojang.launcher.OperatingSystem;
  import com.mojang.launcher.game.process.GameProcessBuilder;
-@@ -26,9 +29,12 @@
+@@ -26,18 +29,14 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Set;
 +
-+import me.nepnep.msa4legacy.patches.MicrosoftAccount;
++import me.nepnep.msa4legacy.MicrosoftAccount;
  import net.minecraft.launcher.CompatibilityRule;
  import net.minecraft.launcher.CurrentLaunchFeatureMatcher;
  import net.minecraft.launcher.Launcher;
 +import net.minecraft.launcher.profile.AuthenticationDatabase;
  import net.minecraft.launcher.profile.ProfileManager;
- import net.minecraft.launcher.updater.AbstractDownloadInfo;
- import net.minecraft.launcher.updater.Argument;
-@@ -38,6 +44,7 @@
- import net.minecraft.launcher.updater.DownloadType;
- import net.minecraft.launcher.updater.Library;
- import net.minecraft.launcher.updater.MinecraftVersionManager;
+-import net.minecraft.launcher.updater.AbstractDownloadInfo;
+-import net.minecraft.launcher.updater.Argument;
+-import net.minecraft.launcher.updater.ArgumentType;
+-import net.minecraft.launcher.updater.AssetIndexInfo;
+-import net.minecraft.launcher.updater.DownloadInfo;
+-import net.minecraft.launcher.updater.DownloadType;
+-import net.minecraft.launcher.updater.Library;
+-import net.minecraft.launcher.updater.MinecraftVersionManager;
 +import org.apache.commons.io.FileUtils;
  import org.apache.commons.lang3.text.StrSubstitutor;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -45,6 +52,7 @@
+@@ -45,6 +44,7 @@
  public class CompleteMinecraftVersion
  implements CompleteVersion {
      private static final Logger LOGGER = LogManager.getLogger();
@@ -39,7 +41,7 @@
      private String inheritsFrom;
      private String id;
      private Date time;
-@@ -98,6 +106,15 @@
+@@ -98,6 +98,15 @@
                  this.compatibilityRules.add(new CompatibilityRule(compatibilityRule));
              }
          }
@@ -55,7 +57,7 @@
      }
  
      @Override
-@@ -328,11 +345,14 @@
+@@ -328,11 +337,14 @@
  
      public CompatibilityRule.FeatureMatcher createFeatureMatcher() {
          ProfileManager profileManager = Launcher.getCurrentInstance().getProfileManager();
@@ -73,7 +75,7 @@
          if (this.arguments != null) {
              List<Argument> args = this.arguments.get((Object)type);
              if (args != null) {
-@@ -343,6 +363,10 @@
+@@ -343,6 +355,10 @@
          } else if (this.minecraftArguments != null) {
              if (type == ArgumentType.GAME) {
                  for (String arg : this.minecraftArguments.split(" ")) {
@@ -84,7 +86,7 @@
                      builder.withArguments(substitutor.replace(arg));
                  }
                  if (featureMatcher.hasFeature("is_demo_user", true)) {
-@@ -369,4 +393,3 @@
+@@ -369,4 +385,3 @@
          }
      }
  }

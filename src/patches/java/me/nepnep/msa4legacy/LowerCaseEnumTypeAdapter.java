@@ -1,4 +1,4 @@
-package me.nepnep.msa4legacy.patches;
+package me.nepnep.msa4legacy;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
